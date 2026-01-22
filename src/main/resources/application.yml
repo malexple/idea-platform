@@ -58,6 +58,7 @@ app:
   upload:
     path: ${UPLOAD_PATH:./uploads}
     allowed-types: pdf,docx,xlsx,png,jpg,jpeg,zip
+    max-file-size: 10485760  # 10 MB в байтах
 
 logging:
   level:

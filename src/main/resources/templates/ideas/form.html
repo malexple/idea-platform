@@ -14,7 +14,8 @@
                     <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Подать новую идею</h4>
                 </div>
                 <div class="card-body">
-                    <form th:action="@{/ideas/new}" th:object="${ideaForm}" method="post" enctype="multipart/form-data">
+                    <form th:action="@{/ideas/new}" th:object="${ideaForm}" method="post"
+                          enctype="multipart/form-data" id="ideaForm">
 
                         <!-- Type -->
                         <div class="mb-4">
@@ -114,10 +115,15 @@
                         <!-- Attachments -->
                         <div class="mb-4">
                             <label for="attachments" class="form-label">Вложения</label>
-                            <input type="file" name="attachments" class="form-control" id="attachments" multiple>
+                            <input type="file" name="attachments" class="form-control" id="attachments" multiple
+                                   accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.zip">
                             <small class="form-text text-muted">
                                 Допустимые форматы: PDF, DOCX, XLSX, PNG, JPG, ZIP. Максимум 10 МБ на файл.
                             </small>
+                            <!-- Список выбранных файлов -->
+                            <div id="fileList" class="mt-2"></div>
+                            <!-- Ошибки валидации файлов -->
+                            <div id="fileErrors" class="alert alert-danger mt-2" style="display: none;"></div>
                         </div>
 
                         <hr>
@@ -126,7 +132,7 @@
                             <a th:href="@{/ideas}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left"></i> Отмена
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
                                 <i class="bi bi-send"></i> Отправить заявку
                             </button>
                         </div>
@@ -140,6 +146,7 @@
 <th:block layout:fragment="scripts">
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // === Каскадные селекты ===
             const divisionSelect = document.getElementById('divisionId');
             const tribeSelect = document.getElementById('tribeId');
             const teamSelect = document.getElementById('teamId');
@@ -179,6 +186,111 @@
                             });
                             teamSelect.disabled = false;
                         });
+                }
+            });
+
+            // === Валидация файлов ===
+            const fileInput = document.getElementById('attachments');
+            const fileList = document.getElementById('fileList');
+            const fileErrors = document.getElementById('fileErrors');
+            const submitBtn = document.getElementById('submitBtn');
+            const form = document.getElementById('ideaForm');
+
+            const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'xlsx', 'png', 'jpg', 'jpeg', 'zip'];
+            const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+            const MAX_FILES = 10;
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function getFileExtension(filename) {
+                return filename.split('.').pop().toLowerCase();
+            }
+
+            function validateFiles(files) {
+                const errors = [];
+
+                if (files.length > MAX_FILES) {
+                    errors.push(`Можно загрузить не более ${MAX_FILES} файлов`);
+                }
+
+                Array.from(files).forEach(file => {
+                    const ext = getFileExtension(file.name);
+
+                    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                        errors.push(`Файл "${file.name}": недопустимый формат .${ext}. Разрешены: ${ALLOWED_EXTENSIONS.join(', ')}`);
+                    }
+
+                    if (file.size > MAX_FILE_SIZE) {
+                        errors.push(`Файл "${file.name}": размер ${formatFileSize(file.size)} превышает лимит 10 МБ`);
+                    }
+                });
+
+                return errors;
+            }
+
+            function displayFiles(files) {
+                if (files.length === 0) {
+                    fileList.innerHTML = '';
+                    return;
+                }
+
+                let html = '<div class="list-group">';
+                Array.from(files).forEach((file, index) => {
+                    const ext = getFileExtension(file.name);
+                    const isValid = ALLOWED_EXTENSIONS.includes(ext) && file.size <= MAX_FILE_SIZE;
+                    const statusClass = isValid ? 'text-success' : 'text-danger';
+                    const statusIcon = isValid ? 'bi-check-circle' : 'bi-x-circle';
+
+                    html += `
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                            <span>
+                                <i class="bi bi-file-earmark me-2"></i>
+                                ${file.name}
+                                <small class="text-muted ms-2">(${formatFileSize(file.size)})</small>
+                            </span>
+                            <i class="bi ${statusIcon} ${statusClass}"></i>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                fileList.innerHTML = html;
+            }
+
+            function updateValidationState() {
+                const files = fileInput.files;
+                const errors = validateFiles(files);
+
+                displayFiles(files);
+
+                if (errors.length > 0) {
+                    fileErrors.innerHTML = '<strong>Ошибки:</strong><ul class="mb-0 mt-1">' +
+                        errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+                    fileErrors.style.display = 'block';
+                    submitBtn.disabled = true;
+                } else {
+                    fileErrors.style.display = 'none';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            fileInput.addEventListener('change', updateValidationState);
+
+            // Валидация перед отправкой формы
+            form.addEventListener('submit', function(e) {
+                const files = fileInput.files;
+                const errors = validateFiles(files);
+
+                if (errors.length > 0) {
+                    e.preventDefault();
+                    updateValidationState();
+                    fileErrors.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return false;
                 }
             });
         });

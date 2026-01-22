@@ -10,6 +10,7 @@ import com.company.ideaplatform.entity.enums.VoteType;
 import com.company.ideaplatform.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -20,6 +21,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+@Slf4j
 @Controller
 @RequestMapping("/ideas")
 @RequiredArgsConstructor
@@ -101,13 +103,24 @@ public class IdeaController {
             return "ideas/form";
         }
 
-        User author = userService.findByEmail(userDetails.getUsername());
-        var idea = ideaService.createIdea(ideaForm, author);
+        try {
+            User author = userService.findByEmail(userDetails.getUsername());
+            var idea = ideaService.createIdea(ideaForm, author);
 
-        redirectAttributes.addFlashAttribute("success",
-                "Заявка " + idea.getNumber() + " успешно создана!");
+            redirectAttributes.addFlashAttribute("success",
+                    "Заявка " + idea.getNumber() + " успешно создана!");
 
-        return "redirect:/ideas/" + idea.getNumber();
+            return "redirect:/ideas/" + idea.getNumber();
+
+        } catch (IllegalArgumentException e) {
+            // Ошибка валидации файлов или данных
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/ideas/new";
+        } catch (Exception e) {
+            log.error("Error creating idea", e);
+            redirectAttributes.addFlashAttribute("error", "Произошла ошибка при создании заявки. Попробуйте ещё раз.");
+            return "redirect:/ideas/new";
+        }
     }
 
     @PostMapping("/{number}/vote")

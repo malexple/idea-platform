@@ -34,6 +34,9 @@ public class AttachmentService {
     @Value("${app.upload.allowed-types:pdf,docx,xlsx,png,jpg,jpeg,zip}")
     private String allowedTypes;
 
+    @Value("${app.upload.max-file-size:10485760}") // 10 MB
+    private long maxFileSize;
+
     public Attachment saveAttachment(Idea idea, MultipartFile file) {
         validateFile(file);
 
@@ -63,7 +66,7 @@ public class AttachmentService {
 
         } catch (IOException e) {
             log.error("Failed to save attachment: {}", e.getMessage());
-            throw new RuntimeException("Не удалось сохранить файл", e);
+            throw new RuntimeException("Не удалось сохранить файл: " + originalName, e);
         }
     }
 
@@ -104,16 +107,40 @@ public class AttachmentService {
     }
 
     private void validateFile(MultipartFile file) {
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Файл пустой");
         }
 
-        String extension = getExtension(file.getOriginalFilename());
-        List<String> allowed = Arrays.asList(allowedTypes.split(","));
+        String originalName = file.getOriginalFilename();
+        if (originalName == null || originalName.isBlank()) {
+            throw new IllegalArgumentException("Имя файла не указано");
+        }
 
-        if (!allowed.contains(extension.toLowerCase())) {
+        // Проверка расширения
+        String extension = getExtension(originalName);
+        List<String> allowed = Arrays.asList(allowedTypes.toLowerCase().split(","));
+
+        if (extension.isEmpty() || !allowed.contains(extension.toLowerCase())) {
             throw new IllegalArgumentException(
-                    "Недопустимый тип файла. Разрешены: " + allowedTypes);
+                    String.format("Недопустимый тип файла '%s'. Разрешены: %s",
+                            originalName, String.join(", ", allowed)));
+        }
+
+        // Проверка размера
+        if (file.getSize() > maxFileSize) {
+            throw new IllegalArgumentException(
+                    String.format("Файл '%s' превышает максимальный размер %d МБ",
+                            originalName, maxFileSize / (1024 * 1024)));
+        }
+
+        // Проверка на опасные расширения (двойные расширения)
+        String lowerName = originalName.toLowerCase();
+        List<String> dangerous = Arrays.asList(".exe", ".bat", ".cmd", ".sh", ".ps1", ".vbs", ".js", ".jar");
+        for (String ext : dangerous) {
+            if (lowerName.contains(ext)) {
+                throw new IllegalArgumentException(
+                        String.format("Файл '%s' содержит запрещённое расширение", originalName));
+            }
         }
     }
 
@@ -121,6 +148,6 @@ public class AttachmentService {
         if (filename == null || !filename.contains(".")) {
             return "";
         }
-        return filename.substring(filename.lastIndexOf(".") + 1);
+        return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
     }
 }
