@@ -152,6 +152,14 @@
                         <i class="bi bi-plus-circle"></i> Подать идею
                     </a>
                 </li>
+
+                <!-- Для менеджера -->
+                <li class="nav-item" sec:authorize="hasAnyRole('MANAGER', 'ADMIN')">
+                    <a class="nav-link" th:href="@{/manager}">
+                        📊 Аналитика
+                    </a>
+                </li>
+
                 <li class="nav-item" sec:authorize="hasAnyRole('REVIEWER', 'ADMIN')">
                     <a class="nav-link" th:href="@{/review}">
                         <i class="bi bi-clipboard-check"></i> Ревью

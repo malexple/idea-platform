@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Аналитика - Платформа идей</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <h1 class="mb-4">📊 Панель руководителя</h1>
+
+        <!-- Навигация -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link active" th:href="@{/manager}">Обзор</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/manager/people}">Люди</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/manager/teams}">Команды</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/manager/funnel}">Воронка</a>
+            </li>
+        </ul>
+
+        <!-- Ключевые метрики -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body text-center">
+                        <h2 th:text="${dashboard.totalUsers}">0</h2>
+                        <p class="mb-0">Всего пользователей</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body text-center">
+                        <h2 th:text="${dashboard.totalIdeas}">0</h2>
+                        <p class="mb-0">Всего идей</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body text-center">
+                        <h2 th:text="${dashboard.implementedIdeas}">0</h2>
+                        <p class="mb-0">Реализовано</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h2 th:text="${#numbers.formatDecimal(dashboard.submittedToImplementedRate, 1, 1)}">0</h2>
+                        <p class="mb-0">% конверсии</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Распределение по категориям -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">🎯 Карта инноваторов</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col">
+                                <div class="border rounded p-3 bg-danger bg-opacity-10">
+                                    <h3 class="text-danger" th:text="${dashboard.innovatorsCount}">0</h3>
+                                    <p class="mb-1"><strong>🔥 Инноваторы</strong></p>
+                                    <small class="text-muted">1-2% — генерируют идеи</small>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="border rounded p-3 bg-warning bg-opacity-10">
+                                    <h3 class="text-warning" th:text="${dashboard.earlyAdoptersCount}">0</h3>
+                                    <p class="mb-1"><strong>🚀 Ранние последователи</strong></p>
+                                    <small class="text-muted">13-15% — активно поддерживают</small>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="border rounded p-3 bg-info bg-opacity-10">
+                                    <h3 class="text-info" th:text="${dashboard.participantsCount}">0</h3>
+                                    <p class="mb-1"><strong>👥 Участники</strong></p>
+                                    <small class="text-muted">Периодически активны</small>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="border rounded p-3 bg-secondary bg-opacity-10">
+                                    <h3 class="text-secondary" th:text="${dashboard.observersCount}">0</h3>
+                                    <p class="mb-1"><strong>👀 Наблюдатели</strong></p>
+                                    <small class="text-muted">Зарегистрированы</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Топ инноваторов -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">🏆 Топ инноваторов</h5>
+                        <a th:href="@{/manager/people}" class="btn btn-sm btn-outline-primary">Все</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                            <tr>
+                                <th>Имя</th>
+                                <th class="text-center">Идей</th>
+                                <th class="text-center">Реализовано</th>
+                                <th>Категория</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="person : ${dashboard.topInnovators}">
+                                <td>
+                                    <a th:href="@{/profile/{id}(id=${person.userId})}"
+                                       th:text="${person.displayName}">Имя</a>
+                                    <br><small class="text-muted" th:text="${person.teamName}">Команда</small>
+                                </td>
+                                <td class="text-center" th:text="${person.ideasCount}">0</td>
+                                <td class="text-center" th:text="${person.implementedCount}">0</td>
+                                <td>
+                                    <span th:if="${person.category == 'INNOVATOR'}"
+                                          class="badge bg-danger">Инноватор</span>
+                                    <span th:if="${person.category == 'EARLY_ADOPTER'}"
+                                          class="badge bg-warning">Последователь</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Воронка -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">📈 Воронка идей</h5>
+                        <a th:href="@{/manager/funnel}" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                    </div>
+                    <div class="card-body">
+                        <div th:each="stage : ${dashboard.funnel}" class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span th:text="${stage.displayName}">Статус</span>
+                                <span th:text="${stage.count}">0</span>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar" role="progressbar"
+                                     th:style="'width: ' + ${stage.percentage} + '%'"
+                                     th:text="${#numbers.formatDecimal(stage.percentage, 1, 1)} + '%'">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Топ команд -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">👥 Активность команд</h5>
+                        <a th:href="@{/manager/teams}" class="btn btn-sm btn-outline-primary">Все команды</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                            <tr>
+                                <th>Команда</th>
+                                <th>Трайб / Дивизион</th>
+                                <th class="text-center">Участников</th>
+                                <th class="text-center">Идей</th>
+                                <th class="text-center">Активных</th>
+                                <th class="text-center">Вовлечённость</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="team : ${dashboard.topTeams}">
+                                <td th:text="${team.teamName}">Команда</td>
+                                <td>
+                                    <span th:text="${team.tribeName}">Трайб</span>
+                                    <span th:if="${team.divisionName}" class="text-muted">
+                                        / <span th:text="${team.divisionName}">Дивизион</span>
+                                    </span>
+                                </td>
+                                <td class="text-center" th:text="${team.membersCount}">0</td>
+                                <td class="text-center" th:text="${team.ideasCount}">0</td>
+                                <td class="text-center" th:text="${team.activeUsersCount}">0</td>
+                                <td class="text-center">
+                                    <span th:class="${team.engagementRate > 50 ? 'text-success' : (team.engagementRate > 20 ? 'text-warning' : 'text-danger')}"
+                                          th:text="${#numbers.formatDecimal(team.engagementRate, 1, 1)} + '%'">0%</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

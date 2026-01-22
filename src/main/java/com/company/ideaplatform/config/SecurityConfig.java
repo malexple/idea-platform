@@ -31,6 +31,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/ideas", "/ideas/{number}").permitAll()
                         .requestMatchers("/login", "/register").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers("/review/**").hasAnyRole("REVIEWER", "ADMIN")
                         .anyRequest().authenticated()
                 )

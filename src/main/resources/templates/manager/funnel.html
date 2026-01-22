@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Воронка идей - Платформа идей</title>
+    <style>
+        .funnel-stage {
+            transition: all 0.3s ease;
+        }
+        .funnel-stage:hover {
+            transform: scale(1.02);
+        }
+        .funnel-bar {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <h1 class="mb-4">📈 Воронка идей</h1>
+
+        <!-- Навигация -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/manager}">Обзор</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/manager/people}">Люди</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/manager/teams}">Команды</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" th:href="@{/manager/funnel}">Воронка</a>
+            </li>
+        </ul>
+
+        <div class="row">
+            <!-- Визуальная воронка -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Воронка конверсии</h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:each="stage, iter : ${dashboard.funnel}" class="funnel-stage mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span th:text="${stage.displayName}">Статус</span>
+                                <span>
+                                    <strong th:text="${stage.count}">0</strong>
+                                    <small class="text-muted"
+                                           th:text="'(' + ${#numbers.formatDecimal(stage.percentage, 1, 1)} + '%)'">
+                                        (0%)
+                                    </small>
+                                </span>
+                            </div>
+                            <div class="funnel-bar"
+                                 th:style="'width: ' + ${stage.percentage > 5 ? stage.percentage : 5} + '%; background-color: ' + ${
+                                     stage.status == 'SUBMITTED' ? '#6c757d' :
+                                     stage.status == 'VOTING' ? '#0d6efd' :
+                                     stage.status == 'APPROVED' ? '#198754' :
+                                     stage.status == 'REJECTED' ? '#dc3545' :
+                                     stage.status == 'IN_PROGRESS' ? '#0dcaf0' :
+                                     stage.status == 'PILOT' ? '#ffc107' :
+                                     stage.status == 'IMPLEMENTED' ? '#20c997' :
+                                     stage.status == 'POSTPONED' ? '#adb5bd' :
+                                     stage.status == 'DUPLICATE' ? '#6c757d' : '#6c757d'
+                                 }">
+                                <span th:text="${stage.count}">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Метрики конверсии -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Ключевые метрики</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Общая конверсия -->
+                        <div class="mb-4">
+                            <h6>📊 Общая конверсия (Подано → Реализовано)</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-3" style="height: 30px;">
+                                    <div class="progress-bar bg-success"
+                                         th:style="'width: ' + ${dashboard.submittedToImplementedRate} + '%'"
+                                         th:text="${#numbers.formatDecimal(dashboard.submittedToImplementedRate, 1, 1)} + '%'">
+                                        0%
+                                    </div>
+                                </div>
+                                <span class="fs-4 fw-bold text-success"
+                                      th:text="${#numbers.formatDecimal(dashboard.submittedToImplementedRate, 1, 1)} + '%'">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Статистика по статусам -->
+                        <div class="row text-center">
+                            <div class="col-6 col-md-4 mb-3">
+                                <div class="border rounded p-2">
+                                    <h4 class="mb-0 text-primary" th:text="${dashboard.totalIdeas}">0</h4>
+                                    <small class="text-muted">Всего идей</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 mb-3">
+                                <div class="border rounded p-2">
+                                    <h4 class="mb-0 text-success" th:text="${dashboard.implementedIdeas}">0</h4>
+                                    <small class="text-muted">Реализовано</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 mb-3">
+                                <div class="border rounded p-2">
+                                    <h4 class="mb-0 text-info"
+                                        th:text="${dashboard.funnel.?[status == 'IN_PROGRESS'].isEmpty() ? 0 : dashboard.funnel.?[status == 'IN_PROGRESS'][0].count}">0</h4>
+                                    <small class="text-muted">В работе</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 mb-3">
+                                <div class="border rounded p-2">
+                                    <h4 class="mb-0 text-warning"
+                                        th:text="${dashboard.funnel.?[status == 'PILOT'].isEmpty() ? 0 : dashboard.funnel.?[status == 'PILOT'][0].count}">0</h4>
+                                    <small class="text-muted">Пилоты</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 mb-3">
+                                <div class="border rounded p-2">
+                                    <h4 class="mb-0 text-danger"
+                                        th:text="${dashboard.funnel.?[status == 'REJECTED'].isEmpty() ? 0 : dashboard.funnel.?[status == 'REJECTED'][0].count}">0</h4>
+                                    <small class="text-muted">Отклонено</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 mb-3">
+                                <div class="border rounded p-2">
+                                    <h4 class="mb-0 text-secondary"
+                                        th:text="${dashboard.funnel.?[status == 'POSTPONED'].isEmpty() ? 0 : dashboard.funnel.?[status == 'POSTPONED'][0].count}">0</h4>
+                                    <small class="text-muted">Отложено</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Среднее время -->
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <h6 class="mb-2">⏱️ Среднее время реализации</h6>
+                            <span class="fs-3 fw-bold"
+                                  th:text="${dashboard.avgDaysToImplement > 0 ? #numbers.formatDecimal(dashboard.avgDaysToImplement, 1, 0) + ' дней' : 'Нет данных'}">
+                                — дней
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Детальная таблица -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📋 Детализация по статусам</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 30%">Статус</th>
+                        <th class="text-center" style="width: 15%">Количество</th>
+                        <th style="width: 40%">Доля от общего</th>
+                        <th class="text-center" style="width: 15%">Действие</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="stage : ${dashboard.funnel}">
+                        <td>
+                            <span class="badge me-2"
+                                  th:style="'background-color: ' + ${
+                                      stage.status == 'SUBMITTED' ? '#6c757d' :
+                                      stage.status == 'VOTING' ? '#0d6efd' :
+                                      stage.status == 'APPROVED' ? '#198754' :
+                                      stage.status == 'REJECTED' ? '#dc3545' :
+                                      stage.status == 'IN_PROGRESS' ? '#0dcaf0' :
+                                      stage.status == 'PILOT' ? '#ffc107' :
+                                      stage.status == 'IMPLEMENTED' ? '#20c997' :
+                                      stage.status == 'POSTPONED' ? '#adb5bd' :
+                                      stage.status == 'DUPLICATE' ? '#6c757d' : '#6c757d'
+                                  }">&nbsp;</span>
+                            <strong th:text="${stage.displayName}">Статус</strong>
+                        </td>
+                        <td class="text-center">
+                            <span class="fs-5 fw-bold" th:text="${stage.count}">0</span>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar"
+                                     th:style="'width: ' + ${stage.percentage} + '%; background-color: ' + ${
+                                         stage.status == 'SUBMITTED' ? '#6c757d' :
+                                         stage.status == 'VOTING' ? '#0d6efd' :
+                                         stage.status == 'APPROVED' ? '#198754' :
+                                         stage.status == 'REJECTED' ? '#dc3545' :
+                                         stage.status == 'IN_PROGRESS' ? '#0dcaf0' :
+                                         stage.status == 'PILOT' ? '#ffc107' :
+                                         stage.status == 'IMPLEMENTED' ? '#20c997' :
+                                         stage.status == 'POSTPONED' ? '#adb5bd' :
+                                         stage.status == 'DUPLICATE' ? '#6c757d' : '#6c757d'
+                                     }"
+                                     th:text="${#numbers.formatDecimal(stage.percentage, 1, 1)} + '%'">
+                                    0%
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <a th:href="@{/ideas(status=${stage.status})}"
+                               class="btn btn-sm btn-outline-primary"
+                               th:if="${stage.count > 0}">
+                                Смотреть →
+                            </a>
+                            <span th:if="${stage.count == 0}" class="text-muted">—</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Пояснение workflow -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">📖 Жизненный цикл идеи</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
+                    <span class="badge bg-secondary p-2">📝 SUBMITTED</span>
+                    <span>→</span>
+                    <span class="badge bg-primary p-2">🗳️ VOTING</span>
+                    <span>→</span>
+                    <span class="badge bg-info p-2">⚙️ IN_PROGRESS</span>
+                    <span>→</span>
+                    <span class="badge bg-warning text-dark p-2">🧪 PILOT</span>
+                    <span>→</span>
+                    <span class="badge bg-success p-2">✅ IMPLEMENTED</span>
+                </div>
+                <div class="mt-3 text-center text-muted small">
+                    <span class="badge bg-danger me-2">REJECTED</span> — Отклонено
+                    <span class="badge bg-secondary ms-3 me-2">POSTPONED</span> — Отложено
+                    <span class="badge bg-dark ms-3 me-2">DUPLICATE</span> — Дубликат
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 public enum UserRole {
     USER("Пользователь"),
     REVIEWER("Ревьюер"),
+    MANAGER("Руководитель"),
     ADMIN("Администратор");
 
     private final String displayName;

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Карта инноваторов - Платформа идей</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <h1 class="mb-4">🎯 Карта инноваторов</h1>
+
+        <!-- Навигация -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/manager}">Обзор</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" th:href="@{/manager/people}">Люди</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/manager/teams}">Команды</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/manager/funnel}">Воронка</a>
+            </li>
+        </ul>
+
+        <!-- Фильтр по категориям -->
+        <div class="btn-group mb-4" role="group">
+            <a th:href="@{/manager/people(category='ALL')}"
+               th:class="${selectedCategory == 'ALL' ? 'btn btn-primary' : 'btn btn-outline-primary'}">
+                Все
+            </a>
+            <a th:href="@{/manager/people(category='INNOVATOR')}"
+               th:class="${selectedCategory == 'INNOVATOR' ? 'btn btn-danger' : 'btn btn-outline-danger'}">
+                🔥 Инноваторы
+                <span class="badge bg-light text-dark" th:text="${dashboard.innovatorsCount}">0</span>
+            </a>
+            <a th:href="@{/manager/people(category='EARLY_ADOPTER')}"
+               th:class="${selectedCategory == 'EARLY_ADOPTER' ? 'btn btn-warning' : 'btn btn-outline-warning'}">
+                🚀 Ранние последователи
+                <span class="badge bg-light text-dark" th:text="${dashboard.earlyAdoptersCount}">0</span>
+            </a>
+            <a th:href="@{/manager/people(category='PARTICIPANT')}"
+               th:class="${selectedCategory == 'PARTICIPANT' ? 'btn btn-info' : 'btn btn-outline-info'}">
+                👥 Участники
+                <span class="badge bg-light text-dark" th:text="${dashboard.participantsCount}">0</span>
+            </a>
+            <a th:href="@{/manager/people(category='OBSERVER')}"
+               th:class="${selectedCategory == 'OBSERVER' ? 'btn btn-secondary' : 'btn btn-outline-secondary'}">
+                👀 Наблюдатели
+                <span class="badge bg-light text-dark" th:text="${dashboard.observersCount}">0</span>
+            </a>
+        </div>
+
+        <!-- Таблица пользователей -->
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                    <tr>
+                        <th>Имя</th>
+                        <th>Email</th>
+                        <th>Команда</th>
+                        <th class="text-center">Идей</th>
+                        <th class="text-center">Реализовано</th>
+                        <th class="text-center">Голосов</th>
+                        <th class="text-center">Комментариев</th>
+                        <th>Категория</th>
+                        <th class="text-center">Скор</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="person : ${people}">
+                        <td>
+                            <a th:href="@{/profile/{id}(id=${person.userId})}"
+                               th:text="${person.displayName}">Имя</a>
+                        </td>
+                        <td th:text="${person.email}">email@example.com</td>
+                        <td th:text="${person.teamName ?: '—'}">Команда</td>
+                        <td class="text-center" th:text="${person.ideasCount}">0</td>
+                        <td class="text-center">
+                            <span th:if="${person.implementedCount > 0}" class="text-success fw-bold"
+                                  th:text="${person.implementedCount}">0</span>
+                            <span th:if="${person.implementedCount == 0}">0</span>
+                        </td>
+                        <td class="text-center" th:text="${person.votesCount}">0</td>
+                        <td class="text-center" th:text="${person.commentsCount}">0</td>
+                        <td>
+                            <span th:if="${person.category == 'INNOVATOR'}"
+                                  class="badge bg-danger">🔥 Инноватор</span>
+                            <span th:if="${person.category == 'EARLY_ADOPTER'}"
+                                  class="badge bg-warning text-dark">🚀 Последователь</span>
+                            <span th:if="${person.category == 'PARTICIPANT'}"
+                                  class="badge bg-info">👥 Участник</span>
+                            <span th:if="${person.category == 'OBSERVER'}"
+                                  class="badge bg-secondary">👀 Наблюдатель</span>
+                            <span th:if="${person.category == 'INACTIVE'}"
+                                  class="badge bg-dark">💤 Неактивен</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="fw-bold" th:text="${#numbers.formatDecimal(person.activityScore, 1, 0)}">0</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
