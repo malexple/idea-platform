@@ -93,4 +93,106 @@ public class ReviewController {
 
         return "redirect:/ideas/" + number;
     }
+
+    /**
+     * Страница управления статусом (для идей в VOTING и далее)
+     */
+    @GetMapping("/{number}/workflow")
+    public String workflowPage(
+            @PathVariable String number,
+            @CurrentUser UserDetails userDetails,
+            Model model) {
+
+        User user = userService.findByEmail(userDetails.getUsername());
+        IdeaViewDto idea = ideaService.getIdeaByNumber(number, user.getId());
+
+        model.addAttribute("idea", idea);
+        return "review/workflow";
+    }
+
+    /**
+     * Взять в работу (VOTING → IN_PROGRESS)
+     */
+    @PostMapping("/{number}/to-progress")
+    public String toInProgress(
+            @PathVariable String number,
+            @RequestParam String jiraLink,
+            @CurrentUser UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            User user = userService.findByEmail(userDetails.getUsername());
+            ideaService.advanceToInProgress(number, jiraLink, user);
+            redirectAttributes.addFlashAttribute("success", "Идея взята в работу");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/ideas/" + number;
+    }
+
+    /**
+     * Перевести в пилот (IN_PROGRESS → PILOT)
+     */
+    @PostMapping("/{number}/to-pilot")
+    public String toPilot(
+            @PathVariable String number,
+            @RequestParam(required = false) String comment,
+            @CurrentUser UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            User user = userService.findByEmail(userDetails.getUsername());
+            ideaService.advanceToPilot(number, comment, user);
+            redirectAttributes.addFlashAttribute("success", "Идея переведена в пилот");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/ideas/" + number;
+    }
+
+    /**
+     * Завершить (PILOT/IN_PROGRESS → IMPLEMENTED)
+     */
+    @PostMapping("/{number}/complete")
+    public String complete(
+            @PathVariable String number,
+            @RequestParam String actualEffect,
+            @CurrentUser UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            User user = userService.findByEmail(userDetails.getUsername());
+            ideaService.completeIdea(number, actualEffect, user);
+            redirectAttributes.addFlashAttribute("success", "Идея успешно внедрена!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/ideas/" + number;
+    }
+
+    /**
+     * Отклонить или отложить
+     */
+    @PostMapping("/{number}/reject")
+    public String reject(
+            @PathVariable String number,
+            @RequestParam IdeaStatus status,
+            @RequestParam(required = false) String comment,
+            @CurrentUser UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            User user = userService.findByEmail(userDetails.getUsername());
+            ideaService.rejectOrPostpone(number, status, comment, user);
+            redirectAttributes.addFlashAttribute("success", "Статус изменён");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/ideas/" + number;
+    }
+
 }

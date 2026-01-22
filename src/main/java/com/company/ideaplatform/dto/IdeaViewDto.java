@@ -37,4 +37,5 @@ public class IdeaViewDto {
     private Map<String, Long> votesCounts;
     private long totalVotes;
     private String currentUserVote;
+    private String actualEffect;
 }

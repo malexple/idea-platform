@@ -329,6 +329,7 @@ public class IdeaService {
                 .votesCounts(voteCounts)
                 .totalVotes(voteCounts.values().stream().mapToLong(Long::longValue).sum())
                 .currentUserVote(currentUserVote)
+                .actualEffect(idea.getActualEffect())
                 .build();
     }
 
@@ -369,4 +370,113 @@ public class IdeaService {
                 .fileSize(attachment.getFileSize())
                 .build();
     }
+
+    /**
+     * Продвижение идеи из VOTING в работу
+     */
+    @Transactional
+    public void advanceToInProgress(String ideaNumber, String jiraLink, User changedBy) {
+        if (jiraLink == null || jiraLink.isBlank()) {
+            throw new IllegalArgumentException("Для перевода в работу необходимо указать ссылку на задачу в Jira");
+        }
+
+        Idea idea = getIdeaEntityByNumber(ideaNumber);
+
+        if (idea.getStatus() != IdeaStatus.VOTING && idea.getStatus() != IdeaStatus.APPROVED) {
+            throw new IllegalStateException("Перевести в работу можно только из статуса 'Голосование' или 'Одобрена'");
+        }
+
+        IdeaStatus oldStatus = idea.getStatus();
+        idea.setStatus(IdeaStatus.IN_PROGRESS);
+        idea.setJiraLink(jiraLink);
+        ideaRepository.save(idea);
+
+        createStatusHistory(idea, oldStatus, IdeaStatus.IN_PROGRESS, changedBy, "Взято в работу: " + jiraLink);
+
+        if (idea.getAuthor() != null) {
+            emailService.sendStatusChangeNotification(idea, oldStatus, IdeaStatus.IN_PROGRESS);
+        }
+
+        log.info("Idea {} advanced to IN_PROGRESS by {}", ideaNumber, changedBy.getEmail());
+    }
+
+    /**
+     * Перевод в пилот
+     */
+    @Transactional
+    public void advanceToPilot(String ideaNumber, String comment, User changedBy) {
+        Idea idea = getIdeaEntityByNumber(ideaNumber);
+
+        if (idea.getStatus() != IdeaStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Перевести в пилот можно только из статуса 'В работе'");
+        }
+
+        IdeaStatus oldStatus = idea.getStatus();
+        idea.setStatus(IdeaStatus.PILOT);
+        ideaRepository.save(idea);
+
+        createStatusHistory(idea, oldStatus, IdeaStatus.PILOT, changedBy, comment);
+
+        if (idea.getAuthor() != null) {
+            emailService.sendStatusChangeNotification(idea, oldStatus, IdeaStatus.PILOT);
+        }
+
+        log.info("Idea {} advanced to PILOT by {}", ideaNumber, changedBy.getEmail());
+    }
+
+    /**
+     * Завершение — внедрено
+     */
+    @Transactional
+    public void completeIdea(String ideaNumber, String actualEffect, User changedBy) {
+        if (actualEffect == null || actualEffect.isBlank()) {
+            throw new IllegalArgumentException("Для завершения необходимо указать фактический эффект");
+        }
+
+        Idea idea = getIdeaEntityByNumber(ideaNumber);
+
+        if (idea.getStatus() != IdeaStatus.PILOT && idea.getStatus() != IdeaStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Завершить можно только из статуса 'Пилот' или 'В работе'");
+        }
+
+        IdeaStatus oldStatus = idea.getStatus();
+        idea.setStatus(IdeaStatus.IMPLEMENTED);
+        idea.setActualEffect(actualEffect);
+        ideaRepository.save(idea);
+
+        createStatusHistory(idea, oldStatus, IdeaStatus.IMPLEMENTED, changedBy, "Фактический эффект: " + actualEffect);
+
+        // Награда автору за реализацию
+        if (idea.getAuthor() != null) {
+            achievementService.checkImplementationAchievements(idea.getAuthor(), idea);
+            emailService.sendStatusChangeNotification(idea, oldStatus, IdeaStatus.IMPLEMENTED);
+        }
+
+        log.info("Idea {} completed by {}", ideaNumber, changedBy.getEmail());
+    }
+
+    /**
+     * Отклонение/откладывание из любого статуса
+     */
+    @Transactional
+    public void rejectOrPostpone(String ideaNumber, IdeaStatus newStatus, String comment, User changedBy) {
+        if (newStatus != IdeaStatus.REJECTED && newStatus != IdeaStatus.POSTPONED) {
+            throw new IllegalArgumentException("Допустимые статусы: REJECTED, POSTPONED");
+        }
+
+        Idea idea = getIdeaEntityByNumber(ideaNumber);
+        IdeaStatus oldStatus = idea.getStatus();
+
+        idea.setStatus(newStatus);
+        ideaRepository.save(idea);
+
+        createStatusHistory(idea, oldStatus, newStatus, changedBy, comment);
+
+        if (idea.getAuthor() != null) {
+            emailService.sendStatusChangeNotification(idea, oldStatus, newStatus);
+        }
+
+        log.info("Idea {} changed to {} by {}", ideaNumber, newStatus, changedBy.getEmail());
+    }
+
 }

@@ -211,6 +211,13 @@
                     </a>
                 </div>
             </div>
+
+            <!-- Кнопка управления статусом для ревьюеров -->
+            <div sec:authorize="hasAnyRole('REVIEWER', 'ADMIN')" class="mt-3">
+                <a th:href="@{/review/{n}/workflow(n=${idea.number})}" class="btn btn-outline-primary">
+                    ⚙️ Управление статусом
+                </a>
+            </div>
         </div>
     </div>
 </div>

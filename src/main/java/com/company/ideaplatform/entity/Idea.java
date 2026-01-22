@@ -78,6 +78,9 @@ public class Idea extends BaseEntity {
     @Column(name = "jira_link")
     private String jiraLink;
 
+    @Column(name = "actual_effect", columnDefinition = "TEXT")
+    private String actualEffect;
+
     @OneToMany(mappedBy = "idea", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Attachment> attachments = new ArrayList<>();
