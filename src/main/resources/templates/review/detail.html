@@ -34,11 +34,10 @@
                     </div>
 
                     <h5>Описание</h5>
-                    <div class="mb-4" th:utext="${#strings.replace(idea.description, T(System).lineSeparator(), '&lt;br/&gt;')}"></div>
+                    <div class="mb-4 description-text" th:text="${idea.description}"></div>
 
                     <h5>Ожидаемый эффект</h5>
-                    <div class="p-3 bg-light rounded"
-                         th:utext="${#strings.replace(idea.expectedEffect, T(System).lineSeparator(), '&lt;br/&gt;')}"></div>
+                    <div class="p-3 bg-light rounded description-text" th:text="${idea.expectedEffect}"></div>
                 </div>
             </div>
         </div>
@@ -101,6 +100,15 @@
             });
         });
     </script>
+</th:block>
+
+<th:block layout:fragment="styles">
+    <style>
+        .description-text {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
 </th:block>
 </body>
 </html>
