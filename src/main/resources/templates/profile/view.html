@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title th:text="${profile.displayName}">Профиль</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="row">
+        <!-- Profile Info -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-person-circle" style="font-size: 5rem; color: #6c757d;"></i>
+                    </div>
+                    <h3 th:text="${profile.displayName}"></h3>
+                    <p class="text-muted" th:text="${profile.email}"></p>
+
+                    <div th:if="${profile.teamName}" class="mb-3">
+                        <small class="text-muted">
+                            <span th:text="${profile.divisionName}"></span> →
+                            <span th:text="${profile.tribeName}"></span> →
+                            <span th:text="${profile.teamName}"></span>
+                        </small>
+                    </div>
+
+                    <hr>
+
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4 th:text="${profile.totalIdeas}">0</h4>
+                            <small class="text-muted">Идей</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 th:text="${profile.implementedIdeas}">0</h4>
+                            <small class="text-muted">Внедрено</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 th:text="${profile.votesGiven}">0</h4>
+                            <small class="text-muted">Голосов</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Достижения</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Hero Stats -->
+                    <div class="row mb-4">
+                        <th:block th:each="hero : ${heroTypes}">
+                            <div class="col-4 col-md-2 text-center mb-3">
+                                <div th:class="'achievement-hex mx-auto ' + ${hero.name().toLowerCase()}"
+                                     th:classappend="${profile.achievementsByHero.get(hero.name()) > 0} ? 'earned' : ''">
+                                    <span th:switch="${hero.name()}">
+                                        <i th:case="'OWL'" class="bi bi-eye"></i>
+                                        <i th:case="'BEE'" class="bi bi-hexagon"></i>
+                                        <i th:case="'EAGLE'" class="bi bi-send"></i>
+                                        <i th:case="'PHOENIX'" class="bi bi-fire"></i>
+                                        <i th:case="'DOLPHIN'" class="bi bi-chat-heart"></i>
+                                        <i th:case="'DRAGON'" class="bi bi-lightning-charge"></i>
+                                    </span>
+                                </div>
+                                <small th:text="${hero.displayName}"></small>
+                                <div>
+                                    <strong th:text="${profile.achievementsByHero.get(hero.name())}">0</strong>
+                                </div>
+                            </div>
+                        </th:block>
+                    </div>
+
+                    <!-- Recent Achievements -->
+                    <h6>Последние достижения</h6>
+                    <div th:if="${profile.recentAchievements.isEmpty()}" class="text-muted">
+                        Пока нет достижений. Подайте первую идею!
+                    </div>
+
+                    <div class="row">
+                        <div th:each="ua : ${profile.recentAchievements}" class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center p-2 border rounded">
+                                <div th:class="'achievement-hex me-3 ' + ${ua.heroType.name().toLowerCase()} + ' earned'"
+                                     style="width: 50px; height: 43px; font-size: 1.2rem;">
+                                    <span th:switch="${ua.heroType.name()}">
+                                        <i th:case="'OWL'" class="bi bi-eye"></i>
+                                        <i th:case="'BEE'" class="bi bi-hexagon"></i>
+                                        <i th:case="'EAGLE'" class="bi bi-send"></i>
+                                        <i th:case="'PHOENIX'" class="bi bi-fire"></i>
+                                        <i th:case="'DOLPHIN'" class="bi bi-chat-heart"></i>
+                                        <i th:case="'DRAGON'" class="bi bi-lightning-charge"></i>
+                                    </span>
+                                </div>
+                                <div>
+                                    <strong th:text="${ua.name}"></strong>
+                                    <small class="d-block text-muted" th:text="${ua.description}"></small>
+                                    <small class="text-muted"
+                                           th:text="${#temporals.format(ua.earnedAt, 'dd.MM.yyyy')}"></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Achievements Grid -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-grid"></i> Все достижения</h5>
+                </div>
+                <div class="card-body">
+                    <div th:each="hero : ${heroTypes}" class="mb-4">
+                        <h6>
+                            <span th:class="'badge ' + ${hero.name().toLowerCase()}"
+                                  th:style="'background-color: ' + ${hero.color}"
+                                  th:text="${hero.displayName}"></span>
+                            <small class="text-muted" th:text="${hero.description}"></small>
+                        </h6>
+                        <div class="d-flex flex-wrap">
+                            <th:block th:each="ach : ${allAchievements}">
+                                <div th:if="${ach.heroType == hero}"
+                                     class="achievement-hex"
+                                     th:classappend="${profile.recentAchievements.?[code == __${ach.code}__].size() > 0} ? ('earned ' + ${hero.name().toLowerCase()}) : ''"
+                                     th:title="${ach.name + ': ' + ach.description}"
+                                     data-bs-toggle="tooltip">
+                                    <small th:text="${ach.level.tier}"></small>
+                                </div>
+                            </th:block>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+</th:block>
+</body>
+</html>

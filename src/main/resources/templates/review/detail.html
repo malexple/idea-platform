@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title th:text="'Ревью: ' + ${idea.number}">Ревью</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/review}">Очередь</a></li>
+            <li class="breadcrumb-item active" th:text="${idea.number}"></li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Idea Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <span th:class="'badge badge-' + ${idea.type.name().toLowerCase()}"
+                          th:text="${idea.type.displayName}"></span>
+                    <span th:class="'badge status-' + ${idea.status.name().toLowerCase()}"
+                          th:text="${idea.status.displayName}"></span>
+                </div>
+                <div class="card-body">
+                    <h3 th:text="${idea.title}"></h3>
+
+                    <div class="mb-3 text-muted">
+                        <i class="bi bi-person"></i> <span th:text="${idea.authorName}"></span>
+                        <span class="mx-2">•</span>
+                        <i class="bi bi-building"></i> <span th:text="${idea.teamName}"></span>
+                    </div>
+
+                    <h5>Описание</h5>
+                    <div class="mb-4" th:utext="${#strings.replace(idea.description, T(System).lineSeparator(), '&lt;br/&gt;')}"></div>
+
+                    <h5>Ожидаемый эффект</h5>
+                    <div class="p-3 bg-light rounded"
+                         th:utext="${#strings.replace(idea.expectedEffect, T(System).lineSeparator(), '&lt;br/&gt;')}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Review Form -->
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Решение</h5>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/review/{n}/decision(n=${idea.number})}"
+                          th:object="${reviewForm}" method="post">
+
+                        <div class="mb-3">
+                            <label class="form-label">Решение *</label>
+                            <div th:each="d : ${decisions}" class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       th:field="*{decision}" th:value="${d.name()}" th:id="${'decision_' + d.name()}">
+                                <label class="form-check-label" th:for="${'decision_' + d.name()}">
+                                    <span th:class="'badge status-' + ${d.name().toLowerCase()}"
+                                          th:text="${d.displayName}"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="duplicateSection" style="display: none;">
+                            <label for="duplicateOfIdeaId" class="form-label">Дубликат заявки</label>
+                            <input type="text" class="form-control" th:field="*{duplicateOfIdeaId}"
+                                   placeholder="ID заявки">
+                            <small class="form-text text-muted">Укажите ID оригинальной заявки</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">Комментарий</label>
+                            <textarea class="form-control" th:field="*{comment}" rows="3"
+                                      placeholder="Причина решения (особенно для отклонения)"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="bi bi-check-lg"></i> Сохранить решение
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const radios = document.querySelectorAll('input[name="decision"]');
+            const duplicateSection = document.getElementById('duplicateSection');
+
+            radios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    duplicateSection.style.display = this.value === 'DUPLICATE' ? 'block' : 'none';
+                });
+            });
+        });
+    </script>
+</th:block>
+</body>
+</html>

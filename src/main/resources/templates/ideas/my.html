@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Мои заявки</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-folder"></i> Мои заявки</h1>
+        <a th:href="@{/ideas/new}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Подать идею
+        </a>
+    </div>
+
+    <div th:if="${ideas.isEmpty()}" class="alert alert-info">
+        <i class="bi bi-info-circle"></i> У вас пока нет заявок.
+        <a th:href="@{/ideas/new}">Подайте первую идею!</a>
+    </div>
+
+    <div class="table-responsive" th:unless="${ideas.isEmpty()}">
+        <table class="table table-hover">
+            <thead class="table-light">
+            <tr>
+                <th>Номер</th>
+                <th>Тип</th>
+                <th>Заголовок</th>
+                <th>Статус</th>
+                <th>Голосов</th>
+                <th>Дата</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="idea : ${ideas}">
+                <td>
+                    <a th:href="@{/ideas/{n}(n=${idea.number})}" th:text="${idea.number}"></a>
+                </td>
+                <td>
+                        <span th:class="'badge badge-' + ${idea.type.name().toLowerCase()}"
+                              th:text="${idea.type.displayName}"></span>
+                </td>
+                <td th:text="${idea.title}"></td>
+                <td>
+                        <span th:class="'badge status-' + ${idea.status.name().toLowerCase()}"
+                              th:text="${idea.status.displayName}"></span>
+                </td>
+                <td th:text="${idea.totalVotes}"></td>
+                <td th:text="${#temporals.format(idea.createdAt, 'dd.MM.yyyy')}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav th:if="${ideas.totalPages > 1}">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${ideas.first} ? 'disabled'">
+                <a class="page-link" th:href="@{/ideas/my(page=${ideas.number - 1})}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            <li th:each="i : ${#numbers.sequence(0, ideas.totalPages - 1)}"
+                class="page-item" th:classappend="${i == ideas.number} ? 'active'">
+                <a class="page-link" th:href="@{/ideas/my(page=${i})}" th:text="${i + 1}"></a>
+            </li>
+            <li class="page-item" th:classappend="${ideas.last} ? 'disabled'">
+                <a class="page-link" th:href="@{/ideas/my(page=${ideas.number + 1})}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+</body>
+</html>

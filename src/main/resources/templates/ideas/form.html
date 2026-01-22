@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Новая заявка</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Подать новую идею</h4>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/ideas/new}" th:object="${ideaForm}" method="post" enctype="multipart/form-data">
+
+                        <!-- Type -->
+                        <div class="mb-4">
+                            <label class="form-label">Тип заявки *</label>
+                            <div class="row">
+                                <div th:each="t : ${types}" class="col-md-4">
+                                    <div class="form-check card p-3">
+                                        <input class="form-check-input" type="radio"
+                                               th:field="*{type}" th:value="${t.name()}" th:id="${'type_' + t.name()}">
+                                        <label class="form-check-label" th:for="${'type_' + t.name()}">
+                                            <strong th:text="${t.displayName}"></strong>
+                                            <small class="d-block text-muted" th:text="${t.description}"></small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div th:if="${#fields.hasErrors('type')}" class="text-danger" th:errors="*{type}"></div>
+                        </div>
+
+                        <!-- Anonymous -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" th:field="*{anonymous}" id="anonymous">
+                                <label class="form-check-label" for="anonymous">
+                                    Подать анонимно
+                                </label>
+                                <small class="form-text text-muted d-block">
+                                    При анонимной подаче ваше имя не будет отображаться, но ачивки не начисляются
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Division / Tribe / Team -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="divisionId" class="form-label">Дивизион *</label>
+                                <select th:field="*{divisionId}" class="form-select" id="divisionId" required>
+                                    <option value="">— Выберите —</option>
+                                    <option th:each="d : ${divisions}" th:value="${d.id}" th:text="${d.name}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="tribeId" class="form-label">Трайб *</label>
+                                <select th:field="*{tribeId}" class="form-select" id="tribeId" required disabled>
+                                    <option value="">— Сначала выберите дивизион —</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="teamId" class="form-label">Команда *</label>
+                                <select th:field="*{teamId}" class="form-select" id="teamId" required disabled>
+                                    <option value="">— Сначала выберите трайб —</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Title -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Заголовок *</label>
+                            <input type="text" th:field="*{title}" class="form-control" id="title"
+                                   placeholder="Краткое название вашей идеи" required maxlength="500">
+                            <div th:if="${#fields.hasErrors('title')}" class="text-danger" th:errors="*{title}"></div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Описание *</label>
+                            <textarea th:field="*{description}" class="form-control" id="description" rows="5"
+                                      placeholder="Подробно опишите проблему или идею..." required></textarea>
+                            <div th:if="${#fields.hasErrors('description')}" class="text-danger" th:errors="*{description}"></div>
+                        </div>
+
+                        <!-- Expected Effect -->
+                        <div class="mb-3">
+                            <label for="expectedEffect" class="form-label">Ожидаемый эффект *</label>
+                            <textarea th:field="*{expectedEffect}" class="form-control" id="expectedEffect" rows="3"
+                                      placeholder="Какой результат ожидается? Экономия времени, денег, улучшение качества..." required></textarea>
+                            <small class="form-text text-muted">
+                                Опишите конкретный эффект: сколько часов сэкономит, какие проблемы решит, кому будет полезно
+                            </small>
+                            <div th:if="${#fields.hasErrors('expectedEffect')}" class="text-danger" th:errors="*{expectedEffect}"></div>
+                        </div>
+
+                        <!-- Priority -->
+                        <div class="mb-3">
+                            <label class="form-label">Приоритет *</label>
+                            <div>
+                                <div th:each="p : ${priorities}" class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio"
+                                           th:field="*{priority}" th:value="${p.name()}" th:id="${'priority_' + p.name()}">
+                                    <label class="form-check-label" th:for="${'priority_' + p.name()}"
+                                           th:classappend="'priority-' + ${p.name().toLowerCase()}"
+                                           th:text="${p.displayName}"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Attachments -->
+                        <div class="mb-4">
+                            <label for="attachments" class="form-label">Вложения</label>
+                            <input type="file" name="attachments" class="form-control" id="attachments" multiple>
+                            <small class="form-text text-muted">
+                                Допустимые форматы: PDF, DOCX, XLSX, PNG, JPG, ZIP. Максимум 10 МБ на файл.
+                            </small>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <a th:href="@{/ideas}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Отправить заявку
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const divisionSelect = document.getElementById('divisionId');
+            const tribeSelect = document.getElementById('tribeId');
+            const teamSelect = document.getElementById('teamId');
+
+            divisionSelect.addEventListener('change', function() {
+                const divisionId = this.value;
+                tribeSelect.innerHTML = '<option value="">— Загрузка... —</option>';
+                tribeSelect.disabled = true;
+                teamSelect.innerHTML = '<option value="">— Сначала выберите трайб —</option>';
+                teamSelect.disabled = true;
+
+                if (divisionId) {
+                    fetch(`/api/divisions/${divisionId}/tribes`)
+                        .then(response => response.json())
+                        .then(tribes => {
+                            tribeSelect.innerHTML = '<option value="">— Выберите —</option>';
+                            tribes.forEach(t => {
+                                tribeSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+                            });
+                            tribeSelect.disabled = false;
+                        });
+                }
+            });
+
+            tribeSelect.addEventListener('change', function() {
+                const tribeId = this.value;
+                teamSelect.innerHTML = '<option value="">— Загрузка... —</option>';
+                teamSelect.disabled = true;
+
+                if (tribeId) {
+                    fetch(`/api/tribes/${tribeId}/teams`)
+                        .then(response => response.json())
+                        .then(teams => {
+                            teamSelect.innerHTML = '<option value="">— Выберите —</option>';
+                            teams.forEach(t => {
+                                teamSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+                            });
+                            teamSelect.disabled = false;
+                        });
+                }
+            });
+        });
+    </script>
+</th:block>
+</body>
+</html>

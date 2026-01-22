@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main}">
+<head>
+    <title th:text="${idea.number + ' - ' + idea.title}">Заявка</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/ideas}">Все идеи</a></li>
+            <li class="breadcrumb-item active" th:text="${idea.number}"></li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <span th:class="'badge badge-' + ${idea.type.name().toLowerCase()}"
+                              th:text="${idea.type.displayName}"></span>
+                        <span th:class="'badge status-' + ${idea.status.name().toLowerCase()}"
+                              th:text="${idea.status.displayName}"></span>
+                        <span th:class="'ms-2 priority-' + ${idea.priority.name().toLowerCase()}">
+                            <i class="bi bi-flag-fill"></i>
+                            <span th:text="${idea.priority.displayName}"></span>
+                        </span>
+                    </div>
+                    <span class="text-muted" th:text="${idea.number}"></span>
+                </div>
+                <div class="card-body">
+                    <h2 th:text="${idea.title}"></h2>
+
+                    <div class="mb-4 text-muted">
+                        <i class="bi bi-person"></i> <span th:text="${idea.authorName}"></span>
+                        <span class="mx-2">•</span>
+                        <i class="bi bi-calendar"></i>
+                        <span th:text="${#temporals.format(idea.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                        <span class="mx-2">•</span>
+                        <i class="bi bi-building"></i> <span th:text="${idea.teamName}"></span>
+                    </div>
+
+                    <!-- Duplicate Notice -->
+                    <div th:if="${idea.status.name() == 'DUPLICATE'}" class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Эта заявка является дубликатом
+                        <a th:href="@{/ideas/{n}(n=${idea.parentIdeaNumber})}"
+                           th:text="${idea.parentIdeaNumber}"></a>
+                    </div>
+
+                    <h5>Описание</h5>
+                    <div class="mb-4" th:utext="${#strings.replace(idea.description, T(System).lineSeparator(), '&lt;br/&gt;')}"></div>
+
+                    <h5>Ожидаемый эффект</h5>
+                    <div class="mb-4 p-3 bg-light rounded"
+                         th:utext="${#strings.replace(idea.expectedEffect, T(System).lineSeparator(), '&lt;br/&gt;')}"></div>
+
+                    <!-- Attachments -->
+                    <div th:if="${!idea.attachments.isEmpty()}" class="mb-4">
+                        <h5><i class="bi bi-paperclip"></i> Вложения</h5>
+                        <ul class="list-group">
+                            <li th:each="att : ${idea.attachments}" class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="bi bi-file-earmark"></i>
+                                    <span th:text="${att.originalName}"></span>
+                                </span>
+                                <a th:href="@{/attachments/{id}/download(id=${att.id})}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i> Скачать
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comments -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Комментарии</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Comment Disclaimer -->
+                    <div class="comment-disclaimer" sec:authorize="isAuthenticated()">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Уважайте друг друга.</strong>
+                        Запрещены оскорбления, унижение достоинства и нарушение свобод человека.
+                        Относитесь к каждому с пониманием.
+                    </div>
+
+                    <!-- Comment Form -->
+                    <form th:action="@{/ideas/{n}/comments(n=${idea.number})}"
+                          method="post" class="mb-4" sec:authorize="isAuthenticated()">
+                        <div class="mb-3">
+                            <textarea name="text" class="form-control" rows="3"
+                                      placeholder="Напишите комментарий..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> Отправить
+                        </button>
+                    </form>
+
+                    <div th:if="${!#authentication.authenticated}" class="alert alert-info">
+                        <a th:href="@{/login}">Войдите</a>, чтобы оставить комментарий
+                    </div>
+
+                    <!-- Comments List -->
+                    <div th:if="${idea.comments.isEmpty()}" class="text-muted">
+                        Комментариев пока нет
+                    </div>
+
+                    <div th:each="comment : ${idea.comments}" class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong th:text="${comment.authorName}"></strong>
+                            <small class="text-muted">
+                                <span th:text="${#temporals.format(comment.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                                <span th:if="${comment.edited}" class="ms-1">(изменено)</span>
+                            </small>
+                        </div>
+                        <div th:utext="${#strings.replace(comment.text, T(System).lineSeparator(), '&lt;br/&gt;')}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Voting Card -->
+            <div class="card mb-4" th:if="${idea.status.name() == 'VOTING'}">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-hand-thumbs-up"></i> Голосование</h5>
+                </div>
+                <div class="card-body">
+                    <div sec:authorize="isAuthenticated()">
+                        <form th:action="@{/ideas/{n}/vote(n=${idea.number})}" method="post" class="mb-3">
+                            <div class="d-grid gap-2">
+                                <th:block th:each="vt : ${voteTypes}">
+                                    <button type="submit" name="voteType" th:value="${vt.name()}"
+                                            th:class="'btn vote-btn ' + (${idea.currentUserVote == vt.name()} ? 'active' : '')"
+                                            th:classappend="${vt.positive} ? 'text-success' : 'text-warning'">
+                                        <span th:text="${vt.displayName}"></span>
+                                        <span class="badge bg-secondary ms-2"
+                                              th:text="${idea.votesCounts.get(vt.name())}">0</span>
+                                    </button>
+                                </th:block>
+                            </div>
+                        </form>
+
+                        <form th:if="${idea.currentUserVote != null}"
+                              th:action="@{/ideas/{n}/vote/remove(n=${idea.number})}" method="post">
+                            <button type="submit" class="btn btn-link btn-sm text-muted">
+                                <i class="bi bi-x-circle"></i> Отменить голос
+                            </button>
+                        </form>
+                    </div>
+
+                    <div th:unless="${#authorization.expression('isAuthenticated()')}">
+                        <p class="text-muted"><a th:href="@{/login}">Войдите</a>, чтобы проголосовать</p>
+                    </div>
+
+                    <hr>
+                    <div class="text-center">
+                        <h4 th:text="${idea.totalVotes}">0</h4>
+                        <small class="text-muted">всего голосов</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Информация</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Дивизион</span>
+                        <span th:text="${idea.divisionName}"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Трайб</span>
+                        <span th:text="${idea.tribeName}"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Команда</span>
+                        <span th:text="${idea.teamName}"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between" th:if="${idea.reviewDeadline != null}">
+                        <span>Срок ревью</span>
+                        <span th:text="${#temporals.format(idea.reviewDeadline, 'dd.MM.yyyy')}"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between" th:if="${idea.jiraLink != null}">
+                        <span>Jira</span>
+                        <a th:href="${idea.jiraLink}" target="_blank">Открыть</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Review Actions (for reviewers) -->
+            <div class="card" sec:authorize="hasAnyRole('REVIEWER', 'ADMIN')"
+                 th:if="${idea.status.name() == 'SUBMITTED' || idea.status.name() == 'ON_REVIEW'}">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Ревью</h5>
+                </div>
+                <div class="card-body">
+                    <a th:href="@{/review/{n}(n=${idea.number})}" class="btn btn-warning w-100">
+                        <i class="bi bi-pencil"></i> Рассмотреть заявку
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

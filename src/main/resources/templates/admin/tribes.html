@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Управление трайбами</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-people"></i> Трайбы</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            <i class="bi bi-plus-circle"></i> Добавить
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Дивизион</th>
+                    <th>Описание</th>
+                    <th>Статус</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="tribe : ${tribes}">
+                    <td th:text="${tribe.id}"></td>
+                    <td th:text="${tribe.name}"></td>
+                    <td th:text="${tribe.division.name}"></td>
+                    <td th:text="${tribe.description}"></td>
+                    <td>
+                        <span th:if="${tribe.active}" class="badge bg-success">Активен</span>
+                        <span th:unless="${tribe.active}" class="badge bg-secondary">Неактивен</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{/admin/tribes}" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Новый трайб</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="divisionId" class="form-label">Дивизион *</label>
+                            <select class="form-select" id="divisionId" name="divisionId" required>
+                                <option value="">— Выберите —</option>
+                                <option th:each="d : ${divisions}" th:value="${d.id}" th:text="${d.name}"></option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Название *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Описание</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Создать</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

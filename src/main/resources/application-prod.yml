@@ -1,0 +1,13 @@
+# src/main/resources/application-prod.yml
+
+spring:
+  jpa:
+    show-sql: false
+
+  thymeleaf:
+    cache: true
+
+logging:
+  level:
+    com.company.ideaplatform: INFO
+    org.springframework: WARN

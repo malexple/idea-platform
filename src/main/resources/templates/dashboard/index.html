@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Дашборд</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h1 class="mb-4"><i class="bi bi-graph-up"></i> Дашборд</h1>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3 th:text="${dashboard.totalIdeas}">0</h3>
+                    <p class="mb-0">Всего идей</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3 th:text="${dashboard.totalImplemented}">0</h3>
+                    <p class="mb-0">Внедрено</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3 th:text="${dashboard.ideasByStatus.getOrDefault('VOTING', 0)}">0</h3>
+                    <p class="mb-0">На голосовании</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <h3 th:text="${dashboard.totalUsers}">0</h3>
+                    <p class="mb-0">Пользователей</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Ideas by Type -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Идеи по типам</h5>
+                </div>
+                <div class="card-body">
+                    <div th:each="entry : ${dashboard.ideasByType}" class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span th:text="${T(com.company.ideaplatform.entity.enums.IdeaType).valueOf(entry.key).displayName}"></span>
+                            <span th:text="${entry.value}"></span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar" role="progressbar"
+                                 th:style="'width: ' + ${dashboard.totalIdeas > 0 ? (entry.value * 100 / dashboard.totalIdeas) : 0} + '%'"
+                                 th:classappend="'badge-' + ${entry.key.toLowerCase()}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ideas by Status -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Идеи по статусам</h5>
+                </div>
+                <div class="card-body">
+                    <div th:each="entry : ${dashboard.ideasByStatus}" class="d-flex justify-content-between border-bottom py-2">
+                        <span>
+                            <span th:class="'badge status-' + ${entry.key.toLowerCase()}"
+                                  th:text="${T(com.company.ideaplatform.entity.enums.IdeaStatus).valueOf(entry.key).displayName}"></span>
+                        </span>
+                        <strong th:text="${entry.value}"></strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Top Voted Ideas -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-star"></i> Топ идей по голосам</h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${topIdeas.isEmpty()}" class="text-muted">
+                        Пока нет идей на голосовании
+                    </div>
+                    <div th:each="idea, iter : ${topIdeas}" class="d-flex align-items-center border-bottom py-2">
+                        <span class="badge bg-secondary me-2" th:text="${iter.index + 1}"></span>
+                        <div class="flex-grow-1">
+                            <a th:href="@{/ideas/{n}(n=${idea.number})}" th:text="${idea.title}"
+                               class="text-decoration-none"></a>
+                            <small class="d-block text-muted" th:text="${idea.teamName}"></small>
+                        </div>
+                        <span class="badge bg-primary" th:text="${idea.totalVotes + ' голосов'}"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Лидерборд</h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${leaderboard.isEmpty()}" class="text-muted">
+                        Пока нет данных
+                    </div>
+                    <div th:each="entry, iter : ${leaderboard}" class="d-flex align-items-center border-bottom py-2">
+                        <div th:class="'leaderboard-rank me-3 ' + (${iter.index < 3} ? 'rank-' + (${iter.index + 1}) : 'bg-light')"
+                             th:text="${iter.index + 1}"></div>
+                        <div class="flex-grow-1">
+                            <a th:href="@{/profile/{id}(id=${entry.userId})}"
+                               th:text="${entry.displayName}" class="text-decoration-none"></a>
+                            <small class="d-block text-muted" th:text="${entry.teamName}"></small>
+                        </div>
+                        <div class="text-end">
+                            <div><strong th:text="${entry.ideasCount}"></strong> <small class="text-muted">идей</small></div>
+                            <div><strong th:text="${entry.implementedCount}"></strong> <small class="text-muted">внедрено</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
