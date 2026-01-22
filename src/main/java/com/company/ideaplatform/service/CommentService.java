@@ -33,17 +33,34 @@ public class CommentService {
 
         comment = commentRepository.save(comment);
 
-        // Notify idea author
-        if (idea.getAuthor() != null && !idea.getAuthor().getId().equals(author.getId())) {
-            emailService.sendCommentNotification(idea, comment);
+        // 1. СНАЧАЛА выполняем ВСЕ синхронные операции с БД
+        achievementService.checkCommentingAchievements(author);
+
+        // 2. Принудительно загружаем lazy-данные ДО async вызова
+        User ideaAuthor = idea.getAuthor();
+        boolean shouldNotify = ideaAuthor != null && !ideaAuthor.getId().equals(author.getId());
+
+        if (shouldNotify) {
+            // Force initialization of lazy proxies
+            ideaAuthor.getDisplayName();
+            ideaAuthor.getEmail();
+            idea.getNumber();
+            idea.getTitle();
+            author.getDisplayName();
+            comment.getText();
         }
 
-        // Check commenting achievements
-        achievementService.checkCommentingAchievements(author);
+        // 3. Создаём результат ДО async вызова
+        CommentDto result = mapToDto(comment);
 
         log.info("User {} added comment to idea {}", author.getEmail(), ideaNumber);
 
-        return mapToDto(comment);
+        // 4. Async вызов В САМОМ КОНЦЕ, после всех операций с БД
+        if (shouldNotify) {
+            emailService.sendCommentNotification(idea, comment);
+        }
+
+        return result;
     }
 
     @Transactional
