@@ -3,6 +3,7 @@ package com.company.ideaplatform.service;
 import com.company.ideaplatform.entity.User;
 import com.company.ideaplatform.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,16 +14,30 @@ import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + email));
+        log.info("=== Login attempt for: {} ===", email);
+
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            log.error("User NOT FOUND: {}", email);
+            throw new UsernameNotFoundException("Пользователь не найден: " + email);
+        }
+
+        log.info("User found: {}", user.getEmail());
+        log.info("User active: {}", user.getActive());
+        log.info("User role: {}", user.getRole());
+        log.info("Password hash (first 20 chars): {}",
+                user.getPassword() != null ? user.getPassword().substring(0, Math.min(20, user.getPassword().length())) : "NULL");
 
         if (!user.getActive()) {
+            log.error("User is INACTIVE: {}", email);
             throw new UsernameNotFoundException("Пользователь деактивирован: " + email);
         }
 

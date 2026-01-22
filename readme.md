@@ -14,3 +14,5 @@ docker-compose up --build
 | admin@company.com    | admin123    | ADMIN    |
 | reviewer@company.com | reviewer123 | REVIEWER |
 | ivan@company.com     | user123     | USER     |
+| maria@company.com    | user123     | USER     |
+| alex@company.com     | user123     | USER     |
