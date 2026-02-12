@@ -1,0 +1,14 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // Минимум Spring Security для интерфейса AuthPlugin
+    compileOnly 'org.springframework.security:spring-security-config:6.4.5'
+    compileOnly 'org.springframework.security:spring-security-web:6.4.5'
+    compileOnly 'org.springframework:spring-web:6.2.7'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
+}
