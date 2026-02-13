@@ -59,6 +59,12 @@ app:
     path: ${UPLOAD_PATH:./uploads}
     allowed-types: pdf,docx,xlsx,png,jpg,jpeg,zip
     max-file-size: 10485760  # 10 MB в байтах
+  settings:
+    # Мастер-пароль для деривации ключа шифрования.
+    # На стенде: переменная окружения SETTINGS_MASTER_KEY в TeamCity secrets.
+    # Минимум 32 символа, рекомендуется 64+.
+    # Если не задан — секреты хранятся в открытом виде (dev-режим).
+    master-key: ${SETTINGS_MASTER_KEY:aG9sYWxhbXVuZG9zdXBlcnNlY3JldGtleWZvcmFlcw==}
 
 logging:
   level:
