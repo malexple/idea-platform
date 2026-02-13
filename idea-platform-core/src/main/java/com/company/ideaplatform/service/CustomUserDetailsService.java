@@ -33,12 +33,18 @@ public class CustomUserDetailsService implements UserDetailsService {
         log.info("User found: {}", user.getEmail());
         log.info("User active: {}", user.getActive());
         log.info("User role: {}", user.getRole());
-        log.info("Password hash (first 20 chars): {}",
-                user.getPassword() != null ? user.getPassword().substring(0, Math.min(20, user.getPassword().length())) : "NULL");
+        log.info("User auth provider: {}", user.getAuthProvider());
 
         if (!user.getActive()) {
             log.error("User is INACTIVE: {}", email);
             throw new UsernameNotFoundException("Пользователь деактивирован: " + email);
+        }
+
+        // Keycloak-пользователи не могут войти через form login
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            log.error("User has no local password (external auth): {}", email);
+            throw new UsernameNotFoundException(
+                    "Пользователь использует внешнюю аутентификацию: " + email);
         }
 
         return new org.springframework.security.core.userdetails.User(

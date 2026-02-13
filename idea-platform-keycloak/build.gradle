@@ -1,0 +1,28 @@
+plugins {
+    id 'io.spring.dependency-management'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.5"
+    }
+}
+
+dependencies {
+    implementation project(':idea-platform-plugin-api')
+
+    // Spring Security OAuth2 Client
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+    // Spring Security (для HttpSecurity)
+    compileOnly 'org.springframework.boot:spring-boot-starter-security'
+    compileOnly 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring Context (для @Component, @Service и т.д.)
+    compileOnly 'org.springframework:spring-context'
+    compileOnly 'org.springframework:spring-beans'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+}

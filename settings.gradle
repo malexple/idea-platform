@@ -2,4 +2,4 @@ rootProject.name = 'idea-platform'
 
 include 'idea-platform-core'
 include 'idea-platform-plugin-api'
-// include 'idea-platform-keycloak'
+ include 'idea-platform-keycloak'

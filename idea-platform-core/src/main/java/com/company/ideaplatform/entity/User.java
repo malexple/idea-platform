@@ -19,7 +19,7 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "password")
     private String password;
 
     @Column(name = "display_name", nullable = false)
@@ -37,6 +37,13 @@ public class User extends BaseEntity {
     @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
+
+    @Column(name = "external_id")
+    private String externalId;
+
+    @Column(name = "auth_provider", nullable = false)
+    @Builder.Default
+    private String authProvider = "local";
 
     @OneToMany(mappedBy = "author")
     @Builder.Default

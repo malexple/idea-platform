@@ -15,6 +15,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     List<User> findByRole(UserRole role);
     List<User> findByActiveTrue();
+    Optional<User> findByExternalId(String externalId);
 
     @Query("SELECT u FROM User u WHERE u.role = 'REVIEWER' AND u.active = true")
     List<User> findActiveReviewers();

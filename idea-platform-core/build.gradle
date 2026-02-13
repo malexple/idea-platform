@@ -4,8 +4,9 @@ plugins {
 }
 
 dependencies {
-    // Наш Plugin API модуль
+    // Наши модули
     implementation project(':idea-platform-plugin-api')
+    implementation project(':idea-platform-keycloak')
 
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -14,6 +15,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
     // Thymeleaf extras
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'

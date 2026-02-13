@@ -1,0 +1,7 @@
+ALTER TABLE users ALTER COLUMN password DROP NOT NULL;
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS external_id VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) NOT NULL DEFAULT 'local';
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_external_id
+    ON users(external_id) WHERE external_id IS NOT NULL;

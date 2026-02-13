@@ -1,6 +1,6 @@
 package com.company.ideaplatform.controller;
 
-import com.company.ideaplatform.config.CurrentUser;
+import com.company.ideaplatform.config.AuthHelper;
 import com.company.ideaplatform.dto.*;
 import com.company.ideaplatform.entity.User;
 import com.company.ideaplatform.entity.enums.IdeaStatus;
@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -31,17 +30,15 @@ public class IdeaController {
     private final UserService userService;
     private final CommentService commentService;
     private final DivisionService divisionService;
+    private final AuthHelper authHelper;
 
     @GetMapping
-    public String listIdeas(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) IdeaType type,
-            @RequestParam(required = false) IdeaStatus status,
-            @CurrentUser UserDetails userDetails,
-            Model model) {
-
-        Long currentUserId = getCurrentUserId(userDetails);
+    public String listIdeas(@RequestParam(defaultValue = "0") int page,
+                            @RequestParam(defaultValue = "10") int size,
+                            @RequestParam(required = false) IdeaType type,
+                            @RequestParam(required = false) IdeaStatus status,
+                            Model model) {
+        Long currentUserId = authHelper.getCurrentUserId();
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         Page<IdeaViewDto> ideas;
@@ -58,23 +55,16 @@ public class IdeaController {
         model.addAttribute("statuses", IdeaStatus.values());
         model.addAttribute("selectedType", type);
         model.addAttribute("selectedStatus", status);
-
         return "ideas/list";
     }
 
     @GetMapping("/{number}")
-    public String viewIdea(
-            @PathVariable String number,
-            @CurrentUser UserDetails userDetails,
-            Model model) {
-
-        Long currentUserId = getCurrentUserId(userDetails);
+    public String viewIdea(@PathVariable String number, Model model) {
+        Long currentUserId = authHelper.getCurrentUserId();
         IdeaViewDto idea = ideaService.getIdeaByNumber(number, currentUserId);
-
         model.addAttribute("idea", idea);
         model.addAttribute("voteTypes", VoteType.values());
         model.addAttribute("commentForm", new CommentCreateDto());
-
         return "ideas/view";
     }
 
@@ -84,115 +74,82 @@ public class IdeaController {
         model.addAttribute("types", IdeaType.values());
         model.addAttribute("priorities", Priority.values());
         model.addAttribute("divisions", divisionService.getAllActive());
-
         return "ideas/form";
     }
 
     @PostMapping("/new")
-    public String createIdea(
-            @Valid @ModelAttribute("ideaForm") IdeaCreateDto ideaForm,
-            BindingResult bindingResult,
-            @CurrentUser UserDetails userDetails,
-            RedirectAttributes redirectAttributes,
-            Model model) {
+    public String createIdea(@Valid @ModelAttribute("ideaForm") IdeaCreateDto ideaForm,
+                             BindingResult bindingResult,
+                             RedirectAttributes redirectAttributes,
+                             Model model) {
+        log.info("=== createIdea called, hasErrors={} ===", bindingResult.hasErrors());
 
         if (bindingResult.hasErrors()) {
+            log.warn("Validation errors: {}", bindingResult.getAllErrors());
             model.addAttribute("types", IdeaType.values());
             model.addAttribute("priorities", Priority.values());
             model.addAttribute("divisions", divisionService.getAllActive());
             return "ideas/form";
         }
 
-        try {
-            User author = userService.findByEmail(userDetails.getUsername());
-            var idea = ideaService.createIdea(ideaForm, author);
+        User author = authHelper.getCurrentUser();
+        log.info("=== author={} ===", author != null ? author.getEmail() : "NULL");
 
-            redirectAttributes.addFlashAttribute("success",
-                    "Заявка " + idea.getNumber() + " успешно создана!");
-
-            return "redirect:/ideas/" + idea.getNumber();
-
-        } catch (IllegalArgumentException e) {
-            // Ошибка валидации файлов или данных
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/ideas/new";
-        } catch (Exception e) {
-            log.error("Error creating idea", e);
-            redirectAttributes.addFlashAttribute("error", "Произошла ошибка при создании заявки. Попробуйте ещё раз.");
-            return "redirect:/ideas/new";
+        if (author == null) {
+            return "redirect:/login";
         }
+
+        ideaService.createIdea(ideaForm, author);
+        redirectAttributes.addFlashAttribute("success", "Идея подана!");
+        return "redirect:/ideas";
     }
 
     @PostMapping("/{number}/vote")
-    public String vote(
-            @PathVariable String number,
-            @RequestParam VoteType voteType,
-            @CurrentUser UserDetails userDetails,
-            RedirectAttributes redirectAttributes) {
-
-        User user = userService.findByEmail(userDetails.getUsername());
-        ideaService.vote(number, user, voteType);
-
-        redirectAttributes.addFlashAttribute("success", "Ваш голос учтён!");
-
+    public String vote(@PathVariable String number,
+                       @RequestParam VoteType type,
+                       RedirectAttributes redirectAttributes) {
+        User user = authHelper.getCurrentUser();
+        if (user == null) return "redirect:/login";
+        ideaService.vote(number, user, type);
+        redirectAttributes.addFlashAttribute("success", "Голос учтён!");
         return "redirect:/ideas/" + number;
     }
 
-    @PostMapping("/{number}/vote/remove")
-    public String removeVote(
-            @PathVariable String number,
-            @CurrentUser UserDetails userDetails,
-            RedirectAttributes redirectAttributes) {
-
-        User user = userService.findByEmail(userDetails.getUsername());
+    @PostMapping("/{number}/unvote")
+    public String unvote(@PathVariable String number,
+                         RedirectAttributes redirectAttributes) {
+        User user = authHelper.getCurrentUser();
+        if (user == null) return "redirect:/login";
         ideaService.removeVote(number, user);
-
         redirectAttributes.addFlashAttribute("info", "Голос отменён");
-
         return "redirect:/ideas/" + number;
     }
 
     @PostMapping("/{number}/comments")
-    public String addComment(
-            @PathVariable String number,
-            @Valid @ModelAttribute("commentForm") CommentCreateDto commentForm,
-            BindingResult bindingResult,
-            @CurrentUser UserDetails userDetails,
-            RedirectAttributes redirectAttributes) {
-
+    public String addComment(@PathVariable String number,
+                             @Valid @ModelAttribute("commentForm") CommentCreateDto commentForm,
+                             BindingResult bindingResult,
+                             RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("error", "Комментарий не может быть пустым");
             return "redirect:/ideas/" + number;
         }
-
-        User author = userService.findByEmail(userDetails.getUsername());
+        User author = authHelper.getCurrentUser();
+        if (author == null) return "redirect:/login";
         commentService.addComment(number, commentForm, author);
-
         redirectAttributes.addFlashAttribute("success", "Комментарий добавлен");
-
         return "redirect:/ideas/" + number;
     }
 
     @GetMapping("/my")
-    public String myIdeas(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @CurrentUser UserDetails userDetails,
-            Model model) {
-
-        User user = userService.findByEmail(userDetails.getUsername());
+    public String myIdeas(@RequestParam(defaultValue = "0") int page,
+                          @RequestParam(defaultValue = "10") int size,
+                          Model model) {
+        User user = authHelper.getCurrentUser();
+        if (user == null) return "redirect:/login";
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
-
         Page<IdeaViewDto> ideas = ideaService.getMyIdeas(user.getId(), pageRequest);
         model.addAttribute("ideas", ideas);
-
         return "ideas/my";
-    }
-
-    private Long getCurrentUserId(UserDetails userDetails) {
-        if (userDetails == null) {
-            return null;
-        }
-        return userService.findByEmail(userDetails.getUsername()).getId();
     }
 }

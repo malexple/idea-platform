@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -154,4 +155,61 @@ public class UserService {
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
+
+    @Transactional
+    public User findOrCreateFromOAuth(String email, String displayName, String externalId) {
+        // Сначала ищем по externalId
+        Optional<User> byExternal = userRepository.findByExternalId(externalId);
+        if (byExternal.isPresent()) {
+            return byExternal.get();
+        }
+
+        // Затем по email — может пользователь был предсоздан через seed или форм-регистрацию
+        Optional<User> byEmail = userRepository.findByEmail(email);
+        if (byEmail.isPresent()) {
+            User user = byEmail.get();
+            user.setExternalId(externalId);
+            user.setAuthProvider("keycloak");
+            // Обновляем displayName если из Keycloak пришло непустое имя
+            if (displayName != null && !displayName.isBlank()) {
+                user.setDisplayName(displayName);
+            }
+            return userRepository.save(user);
+        }
+
+        // Создаём нового пользователя
+        UserRole role = determineRoleForNewOAuthUser(email);
+
+        User user = User.builder()
+                .email(email)
+                .displayName(displayName != null ? displayName : email)
+                .externalId(externalId)
+                .authProvider("keycloak")
+                .role(role)
+                .active(true)
+                .build();
+
+        user = userRepository.save(user);
+        log.info("Created OAuth user: email={}, role={}", email, role);
+        return user;
+    }
+
+    private UserRole determineRoleForNewOAuthUser(String email) {
+        // 1. Если в БД вообще нет пользователей — первый становится ADMIN
+        if (userRepository.count() == 0) {
+            log.info("First user ever — assigning ADMIN role to {}", email);
+            return UserRole.ADMIN;
+        }
+
+        // 2. Если нет ни одного ADMIN — тоже делаем ADMIN
+        if (userRepository.findByRole(UserRole.ADMIN).isEmpty()) {
+            log.info("No ADMIN users exist — assigning ADMIN role to {}", email);
+            return UserRole.ADMIN;
+        }
+
+        // 3. По умолчанию — USER
+        return UserRole.USER;
+    }
+
+
 }
