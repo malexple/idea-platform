@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Настройки</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h1 class="mb-4"><i class="bi bi-gear"></i> Настройки плагинов</h1>
+
+    <div th:if="${plugins.isEmpty()}" class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Плагины не установлены. Подключите модуль плагина в проекте.
+    </div>
+
+    <div th:each="plugin : ${plugins}" class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">
+                    <i class="bi bi-puzzle"></i>
+                    <span th:text="${plugin.displayName}"></span>
+                </h5>
+                <small class="text-muted" th:text="${plugin.description}"></small>
+            </div>
+            <div>
+                <span th:if="${settingService.isPluginEnabled(plugin.id)}" class="badge bg-success">Включён</span>
+                <span th:unless="${settingService.isPluginEnabled(plugin.id)}" class="badge bg-secondary">Выключен</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/admin/settings/{id}(id=${plugin.id})}" method="post">
+
+                <!-- Enabled toggle -->
+                <div class="mb-3 form-check form-switch">
+                    <input type="checkbox" class="form-check-input" role="switch"
+                           id="enabled" name="enabled" value="true"
+                           th:checked="${settingService.isPluginEnabled(plugin.id)}">
+                    <label class="form-check-label" for="enabled">
+                        <strong>Включить плагин</strong>
+                    </label>
+                </div>
+
+                <hr>
+
+                <!-- Plugin settings -->
+                <div th:each="descriptor : ${plugin.settingDescriptors}" class="mb-3">
+                    <label th:for="${descriptor.key}" class="form-label">
+                        <span th:text="${descriptor.displayName}"></span>
+                        <span th:if="${descriptor.required}" class="text-danger">*</span>
+                    </label>
+
+                    <!-- STRING input -->
+                    <input th:if="${descriptor.type.name() == 'STRING'}"
+                           type="text" class="form-control"
+                           th:id="${descriptor.key}"
+                           th:name="${descriptor.key}"
+                           th:value="${settingService.get(descriptor.key, descriptor.defaultValue)}"
+                           th:placeholder="${descriptor.description}">
+
+                    <!-- URL input -->
+                    <input th:if="${descriptor.type.name() == 'URL'}"
+                           type="url" class="form-control"
+                           th:id="${descriptor.key}"
+                           th:name="${descriptor.key}"
+                           th:value="${settingService.get(descriptor.key, descriptor.defaultValue)}"
+                           th:placeholder="${descriptor.description}">
+
+                    <!-- PASSWORD input -->
+                    <input th:if="${descriptor.type.name() == 'PASSWORD'}"
+                           type="password" class="form-control"
+                           th:id="${descriptor.key}"
+                           th:name="${descriptor.key}"
+                           th:value="${settingService.get(descriptor.key, descriptor.defaultValue)}"
+                           th:placeholder="${descriptor.description}"
+                           autocomplete="off">
+
+                    <!-- BOOLEAN input -->
+                    <div th:if="${descriptor.type.name() == 'BOOLEAN'}" class="form-check">
+                        <input type="checkbox" class="form-check-input"
+                               th:id="${descriptor.key}"
+                               th:name="${descriptor.key}"
+                               value="true"
+                               th:checked="${settingService.getBoolean(descriptor.key, false)}">
+                        <label class="form-check-label" th:for="${descriptor.key}"
+                               th:text="${descriptor.description}"></label>
+                    </div>
+
+                    <!-- INTEGER input -->
+                    <input th:if="${descriptor.type.name() == 'INTEGER'}"
+                           type="number" class="form-control"
+                           th:id="${descriptor.key}"
+                           th:name="${descriptor.key}"
+                           th:value="${settingService.get(descriptor.key, descriptor.defaultValue)}">
+
+                    <div th:if="${descriptor.type.name() != 'BOOLEAN'}" class="form-text"
+                         th:text="${descriptor.description}"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> Сохранить
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
