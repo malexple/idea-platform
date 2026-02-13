@@ -479,4 +479,9 @@ public class IdeaService {
         log.info("Idea {} changed to {} by {}", ideaNumber, newStatus, changedBy.getEmail());
     }
 
+    public Page<IdeaViewDto> getAllIdeas(Pageable pageable, Long currentUserId) {
+        Page<Idea> ideas = ideaRepository.findAll(pageable);
+        return ideas.map(idea -> mapToViewDto(idea, currentUserId));
+    }
+
 }

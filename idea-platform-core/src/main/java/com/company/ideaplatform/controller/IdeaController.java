@@ -47,7 +47,7 @@ public class IdeaController {
         } else if (type != null) {
             ideas = ideaService.getIdeasByType(type, pageRequest, currentUserId);
         } else {
-            ideas = ideaService.getIdeasForVoting(pageRequest, currentUserId);
+            ideas = ideaService.getAllIdeas(pageRequest, currentUserId);
         }
 
         model.addAttribute("ideas", ideas);
@@ -57,6 +57,7 @@ public class IdeaController {
         model.addAttribute("selectedStatus", status);
         return "ideas/list";
     }
+
 
     @GetMapping("/{number}")
     public String viewIdea(@PathVariable String number, Model model) {
