@@ -14,8 +14,8 @@ public class KeycloakUserSynchronizerImpl implements KeycloakUserSynchronizer {
     private final UserService userService;
 
     @Override
-    public String synchronizeUser(String email, String displayName, String externalId) {
-        User user = userService.findOrCreateFromOAuth(email, displayName, externalId);
+    public String synchronizeUser(String email, String displayName, String externalId, String adminEmail) {
+        User user = userService.findOrCreateFromOAuth(email, displayName, externalId, adminEmail);
         log.info("Synchronized Keycloak user: email={}, role={}", user.getEmail(), user.getRole());
         return user.getRole().name();
     }

@@ -1,5 +1,6 @@
 package com.company.ideaplatform.keycloak;
 
+import com.company.ideaplatform.plugin.PluginSettingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,9 +19,12 @@ import java.util.Set;
 public class KeycloakOAuth2UserService extends OidcUserService {
 
     private final KeycloakUserSynchronizer userSynchronizer;
+    private final PluginSettingService settingService;
 
-    public KeycloakOAuth2UserService(KeycloakUserSynchronizer userSynchronizer) {
+    public KeycloakOAuth2UserService(KeycloakUserSynchronizer userSynchronizer,
+                                     PluginSettingService settingService) {
         this.userSynchronizer = userSynchronizer;
+        this.settingService = settingService;
     }
 
     @Override
@@ -31,12 +35,14 @@ public class KeycloakOAuth2UserService extends OidcUserService {
         String name = oidcUser.getFullName();
         String sub = oidcUser.getSubject();
 
-        log.info("Keycloak user logged in: email={}, name={}, sub={}", email, name, sub);
+        // Читаем admin-email из настроек
+        String adminEmail = settingService.get("keycloak.admin-email");
 
-        // Синхронизируем пользователя с нашей БД и получаем роль
-        String role = userSynchronizer.synchronizeUser(email, name, sub);
+        log.info("Keycloak user logged in: email={}, name={}, sub={}, adminEmail={}",
+                email, name, sub, adminEmail);
 
-        // Строим authorities из роли в нашей БД
+        String role = userSynchronizer.synchronizeUser(email, name, sub, adminEmail);
+
         Set<GrantedAuthority> authorities = new HashSet<>(oidcUser.getAuthorities());
         authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
 

@@ -157,20 +157,19 @@ public class UserService {
     }
 
     @Transactional
-    public User findOrCreateFromOAuth(String email, String displayName, String externalId) {
+    public User findOrCreateFromOAuth(String email, String displayName, String externalId, String adminEmail) {
         // Сначала ищем по externalId
         Optional<User> byExternal = userRepository.findByExternalId(externalId);
         if (byExternal.isPresent()) {
             return byExternal.get();
         }
 
-        // Затем по email — может пользователь был предсоздан через seed или форм-регистрацию
+        // Затем по email — может пользователь был предсоздан через seed
         Optional<User> byEmail = userRepository.findByEmail(email);
         if (byEmail.isPresent()) {
             User user = byEmail.get();
             user.setExternalId(externalId);
             user.setAuthProvider("keycloak");
-            // Обновляем displayName если из Keycloak пришло непустое имя
             if (displayName != null && !displayName.isBlank()) {
                 user.setDisplayName(displayName);
             }
@@ -178,7 +177,7 @@ public class UserService {
         }
 
         // Создаём нового пользователя
-        UserRole role = determineRoleForNewOAuthUser(email);
+        UserRole role = determineRoleForNewOAuthUser(email, adminEmail);
 
         User user = User.builder()
                 .email(email)
@@ -194,22 +193,27 @@ public class UserService {
         return user;
     }
 
-    private UserRole determineRoleForNewOAuthUser(String email) {
-        // 1. Если в БД вообще нет пользователей — первый становится ADMIN
+    private UserRole determineRoleForNewOAuthUser(String email, String adminEmail) {
+        // 1. Если email совпадает с настройкой keycloak.admin-email — ADMIN
+        if (adminEmail != null && !adminEmail.isBlank() && adminEmail.equalsIgnoreCase(email)) {
+            log.info("Email matches keycloak.admin-email — assigning ADMIN role to {}", email);
+            return UserRole.ADMIN;
+        }
+
+        // 2. Если в БД вообще нет пользователей — первый становится ADMIN
         if (userRepository.count() == 0) {
             log.info("First user ever — assigning ADMIN role to {}", email);
             return UserRole.ADMIN;
         }
 
-        // 2. Если нет ни одного ADMIN — тоже делаем ADMIN
+        // 3. Если нет ни одного ADMIN — тоже делаем ADMIN
         if (userRepository.findByRole(UserRole.ADMIN).isEmpty()) {
             log.info("No ADMIN users exist — assigning ADMIN role to {}", email);
             return UserRole.ADMIN;
         }
 
-        // 3. По умолчанию — USER
+        // 4. По умолчанию — USER
         return UserRole.USER;
     }
-
 
 }
