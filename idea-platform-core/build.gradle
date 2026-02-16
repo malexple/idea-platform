@@ -23,14 +23,14 @@ dependencies {
 
     // Database
     runtimeOnly 'org.postgresql:postgresql'
-    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation 'org.flywaydb:flyway-core'
 
     // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    compileOnly "org.projectlombok:lombok:${versions.lombok}"
+    annotationProcessor "org.projectlombok:lombok:${versions.lombok}"
 
     // Utils
-    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation "org.apache.commons:commons-lang3:${versions.commonsLang3}"
 
     // Dev tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

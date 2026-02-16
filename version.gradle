@@ -1,0 +1,25 @@
+// =============================================================
+// Централизованное управление версиями зависимостей
+// =============================================================
+
+ext {
+    versions = [
+            // Spring Boot & Spring
+            springBoot          : '3.5.5',
+            dependencyManagement: '1.1.7',
+
+            // Thymeleaf
+            thymeleafSpringSec  : '3.1.+',
+            thymeleafLayout     : '3.3.+',
+
+            // Database
+            postgresql          : '42.7.+',
+            flywayCore          : '10.+',
+
+            // Lombok
+            lombok              : '1.18.+',
+
+            // Utils
+            commonsLang3        : '3.14.0',
+    ]
+}

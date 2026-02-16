@@ -1,0 +1,29 @@
+// =============================================================
+// Подключение к локальному Nexus репозиторию
+// Для активации: раскомментировать apply в корневом build.gradle
+// =============================================================
+
+/*
+allprojects {
+    repositories {
+        maven {
+            name = 'nexus-releases'
+            url = "${NEXUS_URL}/repository/maven-releases/"
+            credentials {
+                username = project.findProperty('nexusUser') ?: System.getenv('NEXUS_USER') ?: ''
+                password = project.findProperty('nexusPassword') ?: System.getenv('NEXUS_PASSWORD') ?: ''
+            }
+            allowInsecureProtocol = true
+        }
+        maven {
+            name = 'nexus-snapshots'
+            url = "${NEXUS_URL}/repository/maven-snapshots/"
+            credentials {
+                username = project.findProperty('nexusUser') ?: System.getenv('NEXUS_USER') ?: ''
+                password = project.findProperty('nexusPassword') ?: System.getenv('NEXUS_PASSWORD') ?: ''
+            }
+            allowInsecureProtocol = true
+        }
+    }
+}
+*/

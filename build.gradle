@@ -4,6 +4,12 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7' apply false
 }
 
+// Версии зависимостей — доступны во всех модулях через versions.xxx
+apply from: 'version.gradle'
+
+// Nexus (раскомментировать при необходимости)
+// apply from: 'build-nexus.gradle'
+
 allprojects {
     group = 'com.company'
     version = '1.0.0-SNAPSHOT'
