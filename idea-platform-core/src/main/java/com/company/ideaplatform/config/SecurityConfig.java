@@ -42,8 +42,11 @@ public class SecurityConfig {
             auth.requestMatchers("/debug/**").permitAll();
             auth.requestMatchers("/", "/ideas", "/ideas/{number}").permitAll();
 
+            // /login всегда открыт — AuthController сам решит куда редиректить
+            auth.requestMatchers("/login", "/oauth2/**", "/login/oauth2/**").permitAll();
+
             if (!keycloakEnabled) {
-                auth.requestMatchers("/login", "/register").permitAll();
+                auth.requestMatchers("/register").permitAll();
             }
 
             auth.requestMatchers("/admin/**").hasRole("ADMIN");
@@ -55,18 +58,13 @@ public class SecurityConfig {
         if (keycloakEnabled) {
             log.info("Keycloak authentication ENABLED — configuring OAuth2 Login");
 
-            String loginRedirectUrl = authPlugins.stream()
-                    .filter(p -> settingService.isPluginEnabled(p.getId()))
-                    .map(AuthPlugin::getLoginRedirectUrl)
-                    .findFirst()
-                    .orElse("/oauth2/authorization/keycloak");
-
             http.oauth2Login(oauth2 -> oauth2
-                    .loginPage(loginRedirectUrl)
+                    // "/login" — наша страница. Это отключает DefaultLoginPageGeneratingFilter
+                    // и перенаправляет неаутентифицированных пользователей на AuthController
+                    .loginPage("/login")
                     .defaultSuccessUrl("/ideas", true)
             );
 
-            // OIDC logout — разлогинивает и в Keycloak тоже
             OidcClientInitiatedLogoutSuccessHandler logoutHandler =
                     new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
             logoutHandler.setPostLogoutRedirectUri("{baseUrl}/");
@@ -83,16 +81,13 @@ public class SecurityConfig {
                     .failureUrl("/login?error=true")
                     .permitAll()
             );
-
             http.logout(logout -> logout
                     .logoutSuccessUrl("/login?logout=true")
                     .permitAll()
             );
         }
 
-        http.exceptionHandling(ex -> ex
-                .accessDeniedPage("/access-denied")
-        );
+        http.exceptionHandling(ex -> ex.accessDeniedPage("/access-denied"));
 
         return http.build();
     }

@@ -80,10 +80,7 @@ public class KeycloakAuthPlugin implements AuthPlugin {
 
     @Override
     public void configureHttpSecurity(HttpSecurity http) throws Exception {
-        // OAuth2 Login конфигурация будет подхвачена через KeycloakSecurityConfig
-        http.oauth2Login(oauth2 -> oauth2
-                .defaultSuccessUrl("/ideas", true)
-        );
+        // Конфигурация oauth2Login выполняется в SecurityConfig
     }
 
     @Override
